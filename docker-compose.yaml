@@ -141,21 +141,6 @@ services:
         aliases:
           - node_red_host
 
-  mosquitto:
-    image: eclipse-mosquitto:latest
-    container_name: mosquitto
-    ports:
-      - "1883:1883"  # Puerto MQTT
-      - "9001:9001"  # Puerto WebSocket (opcional)
-    volumes:
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_config:/mosquitto/config
-    restart: always
-    networks:
-      iot:
-        aliases:
-          - mosquitto_host
-
       nodejs:
     build:
       context: .
