@@ -155,3 +155,25 @@ services:
       iot:
         aliases:
           - mosquitto_host
+
+      nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile-nodejs
+    container_name: node_backend
+    ports:
+      - "3001:3001" # Puerto del backend Node.js
+    volumes:
+      - ./node-app:/app # Volumen para el código del backend
+    depends_on:
+      - mariadb
+    environment:
+      DB_HOST: mariadb_host
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      DB_NAME: ${MARIADB_DATABASE}
+    networks:
+      iot:
+        aliases:
+          - nodejs_host
+
