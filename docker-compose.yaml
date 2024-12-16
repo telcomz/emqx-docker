@@ -10,10 +10,7 @@ volumes:
 
   mariadb:
     driver: local
-
-  grafana_data:
-  mosquitto_data:
-  mosquitto_config:
+    
   nodered_data:
 
 networks:
@@ -66,12 +63,12 @@ services:
     image: emqx/emqx:4.4.14
     restart: always
     ports:
-      - 18083:18083
-      - 18084:18084
-      - 1883:1883
-      - 8883:8883
-      - 8073:8083
-      - 8074:8084
+      - 18053:18083
+      - 18054:18084
+      - 1885:1883
+      - 8853:8883
+      - 8053:8083
+      - 8054:8084
     volumes:
       - vol-emqx-data:/opt/emqx/data
       - vol-emqx-etc:/opt/emqx/etc
@@ -109,28 +106,11 @@ services:
         aliases:
           - emqx_host
 
-  grafana:
-    container_name: grafana
-    image: grafana/grafana:latest
-    restart: always
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: Control1982
-    ports:
-      - "3000:3000" # Puerto para acceder a Grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - mariadb
-    networks:
-      iot:
-        aliases:
-          - grafana_host
-
   node-red:
     image: nodered/node-red:latest
     container_name: node-red
     ports:
-      - "1880:1880"  # Puerto de la interfaz web de Node-RED
+      - "1886:1880"  # Puerto de la interfaz web de Node-RED
     volumes:
       - nodered_data:/data
     environment:
