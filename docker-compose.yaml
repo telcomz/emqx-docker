@@ -63,12 +63,12 @@ services:
     image: emqx/emqx:4.4.14
     restart: always
     ports:
-      - 18053:18083
-      - 18054:18084
+      - 18083:18083
+      - 18084:18084
       - 1885:1883
-      - 8853:8883
-      - 8053:8083
-      - 8054:8084
+      - 8883:8883
+      - 8083:8083
+      - 8084:8084
     volumes:
       - vol-emqx-data:/opt/emqx/data
       - vol-emqx-etc:/opt/emqx/etc
@@ -120,4 +120,18 @@ services:
       iot:
         aliases:
           - node_red_host
-
+version: '3.0'
+services:
+  mytb:
+    restart: always
+    image: "thingsboard/tb-postgres"
+    ports:
+      - "8080:9090"
+      - "1883:1883"
+      - "7070:7070"
+      - "5683-5688:5683-5688/udp"
+    environment:
+      TB_QUEUE_TYPE: in-memory
+    volumes:
+      - ~/.mytb-data:/data
+      - ~/.mytb-logs:/var/log/thingsboard
