@@ -1,1 +1,62 @@
 
+version: "3.8"
+
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8080:80"
+
+  emqx:
+    image: emqx/emqx:latest
+    container_name: emqx
+    environment:
+      EMQX_ADMIN_PASSWORD: ${EMQX_ADMIN_PASSWORD}
+      EMQX_ADMIN_USER: ${EMQX_ADMIN_USER}
+    ports:
+      - "1883:1883"  # MQTT puerto
+      - "8083:8083"  # Dashboard puerto
+      - "8084:8084"  # MQTT/TLS puerto
+      - "18083:18083" # HTTP Management Dashboard
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: node-red
+    ports:
+      - "1880:1880"
+    volumes:
+      - node_red_data:/data
+
+  thingsboard:
+    image: thingsboard/tb-postgres
+    container_name: thingsboard
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8081:8080" # Dashboard puerto
+    depends_on:
+      - mariadb
+
+volumes:
+  mariadb_data:
+  node_red_data:
