@@ -1,0 +1,140 @@
+version: '3.8'
+
+volumes:
+  vol-emqx-data:
+    name: foo-emqx-data
+  vol-emqx-etc:
+    name: foo-emqx-etc
+  vol-emqx-log:
+    name: foo-emqx-log
+
+  mariadb:
+    driver: local
+    
+  nodered_data:
+
+networks:
+  iot:
+    name: iot_host
+    driver: bridge
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_USER:  ${MARIADB_USER} 
+      MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+      MYSQL_DATABASE: ${MARIADB_DATABASE}
+    ports:
+      - "4000:3306"
+    volumes:
+     - mariadb:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      iot:
+        aliases: 
+          - mariadb_host
+
+  phpmyadmin:
+    depends_on:
+      - mariadb
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    restart: always
+    expose:
+      - "4001"
+    ports:
+      - "4001:80"
+    environment:
+      - PMA_HOST=mariadb_host
+      - PMA_PORT=3306 
+    networks:
+      iot:
+        aliases: 
+          - phpmyadmin_host
+
+  emqx:
+    depends_on:
+      - mariadb
+    container_name: emqx
+    image: emqx/emqx:4.4.14
+    restart: always
+    ports:
+- 18083:18083
+      - 18084:18084
+      - 1883:1883
+      - 8883:8883
+      - 8083:8083
+      - 8084:8084
+    volumes:
+      - vol-emqx-data:/opt/emqx/data
+      - vol-emqx-etc:/opt/emqx/etc
+      - vol-emqx-log:/opt/emqx/log
+    environment:
+      EMQX_NAME: TELCOMZ
+      EMQX_HOST: 127.0.0.1
+      EMQX_DASHBOARD__DEFAULT_USER__PASSWORD: "Control1982"
+      EMQX_ALLOW_ANONYMOUS: "false"
+      EMQX_NOMATCH: "deny"
+      EMQX_AUTH__MYSQL__SERVER: "mariadb_host:3306" 
+      EMQX_AUTH__MYSQL__USERNAME: ${MARIADB_USER} 
+      EMQX_AUTH__MYSQL__PASSWORD: ${MARIADB_PASSWORD} 
+      EMQX_AUTH__MYSQL__DATABASE: ${MARIADB_DATABASE} 
+      EMQX_DASHBOARD__LISTENER__HTTPS: 18084
+      EMQX_DASHBOARD__LISTENER__HTTPS__ACCEPTORS: 2
+      EMQX_DASHBOARD__LISTENER__HTTPS__MAX_CLIENTS: 2
+      EMQX_DASHBOARD__LISTENER__HTTPS__KEYFILE: "etc/certs/key.pem"
+      EMQX_DASHBOARD__LISTENER__HTTPS__CERTFILE: "etc/certs/cert.pem"
+      EMQX_MANAGEMENT__LISTENER_HTTPS: 8082
+      EMQX_MANAGEMENT__LISTENER_HTTPS__ACCEPTORS: 2
+      EMQX_MANAGEMENT__LISTENER_HTTPS__MAX_CLIENTS: 2
+      EMQX_MANAGEMENT__LISTENER_HTTPS__BACKLOG: 2
+      EMQX_MANAGEMENT__LISTENER_HTTPS__SEND_TIMEOUT: "15s"
+      EMQX_MANAGEMENT__LISTENER_HTTPS__SEND__TIMEOUT_CLOSE: "on"
+      EMQX_MANAGEMENT__LISTENER_HTTPS__CERTFILE: "etc/certs/cert.pem"
+EMQX_MANAGEMENT__LISTENER_HTTPS__KEYFILE: "etc/certs/key.pem"
+      EMQX_LISTENER__TCP__EXTERNAL__MAX_CONNECTIONS: 1000
+      EMQX_LISTENER__SSL__EXTERNAL__MAX_CONNECTIONS: 1000
+      EMQX_LISTENER__WS__EXTERNAL__MAX_CONNECTIONS: 1000
+      EMQX_LISTENER__WSS__EXTERNAL__MAX_CONNECTIONS: 1000
+      EMQX_LOADED_PLUGINS: "emqx_recon,emqx_retainer,emqx_management,emqx_dashboard,emqx_auth_mysql"
+    networks:
+      iot:
+        aliases:
+          - emqx_host
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: node-red
+    ports:
+      - "1880:1880"  # Puerto de la interfaz web de Node-RED
+    volumes:
+      - nodered_data:/data
+    environment:
+      - TZ=America/Argentina/Buenos_Aires  # Configura tu zona horaria
+    restart: always
+    networks:
+      iot:
+        aliases:
+          - node_red_host
+
+
+
+  mytb:
+    restart: always
+    image: "thingsboard/tb-postgres"
+    ports:
+      - "8080:9090"
+      - "1890:1883"
+#     - "1883:1883"
+      - "7070:7070"
+      - "5683-5688:5683-5688/udp"
+    environment:
+      TB_QUEUE_TYPE: in-memory
+    volumes:
+      - ~/.mytb-data:/data
+      - ~/.mytb-logs:/var/log/thingsboard
+   
